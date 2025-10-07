@@ -255,7 +255,7 @@ export class DecryptionError extends Error {
     public constructor(
         public readonly code: DecryptionFailureCode,
         msg: string,
-        details?: Record<string, string | Error>,
+        public readonly details?: Record<string, string | Error>,
     ) {
         super(msg);
         this.name = "DecryptionError";

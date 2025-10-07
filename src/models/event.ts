@@ -269,8 +269,10 @@ export class MatrixEvent extends TypedEventEmitter<MatrixEventEmittedEvents, Mat
     private _hasCachedExtEv = false;
     private _cachedExtEv: Optional<ExtensibleEvent> = undefined;
 
-    /** If we failed to decrypt this event, the reason for the failure. Otherwise, `null`. */
-    private _decryptionFailureReason: DecryptionFailureCode | null = null;
+    /**
+     * If we failed to decrypt this event, the error that occured. Otherwise, `null`.
+     */
+    private _decryptionError: Error | null = null;
 
     /* curve25519 key which we believe belongs to the sender of the event. See
      * getSenderKey()
@@ -835,12 +837,26 @@ export class MatrixEvent extends TypedEventEmitter<MatrixEventEmittedEvents, Mat
      *     couldn't decrypt.
      */
     public isDecryptionFailure(): boolean {
-        return this._decryptionFailureReason !== null;
+        return this._decryptionError !== null;
     }
 
     /** If we failed to decrypt this event, the reason for the failure. Otherwise, `null`. */
     public get decryptionFailureReason(): DecryptionFailureCode | null {
-        return this._decryptionFailureReason;
+        if (this._decryptionError === null) {
+            return null;
+        }
+        if (this._decryptionError instanceof DecryptionError) {
+            return this._decryptionError.code;
+        }
+        return DecryptionFailureCode.UNKNOWN_ERROR;
+    }
+
+    /** If we failed to decrypt this event because the key was withheld, the internal withheld code. Otherwise, `null`. */
+    public get decryptionFailureWithheldCode(): string | null {
+        if (!this.isDecryptionFailure() || !(this._decryptionError instanceof DecryptionError)) {
+            return null;
+        }
+        return String(this._decryptionError.details?.["withheld_code"]) ?? null;
     }
 
     public shouldAttemptDecryption(): boolean {
@@ -930,7 +946,7 @@ export class MatrixEvent extends TypedEventEmitter<MatrixEventEmittedEvents, Mat
                     logger.info(`Decrypted event on retry (${this.getDetails()})`);
                 }
                 this.setClearData(res);
-                this._decryptionFailureReason = null;
+                this._decryptionError = null;
             } catch (e) {
                 const detailedError = e instanceof DecryptionError ? (<DecryptionError>e).detailedString : String(e);
 
@@ -964,8 +980,7 @@ export class MatrixEvent extends TypedEventEmitter<MatrixEventEmittedEvents, Mat
                 logger.warn(`Error decrypting event (${this.getDetails()}): ${detailedError}`);
 
                 this.setClearDataForDecryptionFailure(String(e));
-                this._decryptionFailureReason =
-                    e instanceof DecryptionError ? (<DecryptionError>e).code : DecryptionFailureCode.UNKNOWN_ERROR;
+                this._decryptionError = err;
             }
 
             // Make sure we clear 'decryptionPromise' before sending the 'Event.decrypted' event,
