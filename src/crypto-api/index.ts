@@ -733,11 +733,37 @@ export enum DecryptionFailureCode {
     /** Message was encrypted with a Megolm session whose keys have not been shared with us. */
     MEGOLM_UNKNOWN_INBOUND_SESSION_ID = "MEGOLM_UNKNOWN_INBOUND_SESSION_ID",
 
-    /** A special case of {@link MEGOLM_UNKNOWN_INBOUND_SESSION_ID}: the sender has told us it is withholding the key. */
-    MEGOLM_KEY_WITHHELD = "MEGOLM_KEY_WITHHELD",
-
     /** A special case of {@link MEGOLM_KEY_WITHHELD}: the sender has told us it is withholding the key, because the current device is unverified. */
-    MEGOLM_KEY_WITHHELD_FOR_UNVERIFIED_DEVICE = "MEGOLM_KEY_WITHHELD_FOR_UNVERIFIED_DEVICE",
+    MEGOLM_KEY_WITHHELD_UNVERIFIED = "MEGOLM_KEY_WITHHELD_UNVERIFIED",
+
+    /**
+     * A special case of {@link MEGOLM_UNKNOWN_INBOUND_SESSION_ID}: the sender has told us it is withholding the key.
+     * The device is blacklisted and will not receive the key.
+     */
+    MEGOLM_KEY_WITHHELD_BLACKLISTED = "MEGOLM_KEY_WITHHELD_BLACKLISTED",
+
+    /**
+     * A special case of {@link MEGOLM_UNKNOWN_INBOUND_SESSION_ID}: the sender has told us it is withholding the key.
+     * The device is not authorised to receive the key.
+     */
+    MEGOLM_KEY_WITHHELD_UNAUTHORISED = "MEGOLM_KEY_WITHHELD_UNAUTHORISED",
+
+    /**
+     * A special case of {@link MEGOLM_UNKNOWN_INBOUND_SESSION_ID}: the sender has told us it is withholding the key.
+     * The device is unavailable and cannot receive the key.
+     */
+    MEGOLM_KEY_WITHHELD_UNAVAILABLE = "MEGOLM_KEY_WITHHELD_UNAVAILABLE",
+
+    /**
+     * A special case of {@link MEGOLM_UNKNOWN_INBOUND_SESSION_ID}: the sender has told us it is withholding the key.
+     * The sender has told us it is withholding the key for an unknown reason.
+     */
+    MEGOLM_KEY_WITHHELD_UNKNOWN = "MEGOLM_KEY_WITHHELD_UNKNOWN",
+
+    /** A special case of {@link MEGOLM_UNKNOWN_INBOUND_SESSION_ID}: the sender has told us it is withholding the key.
+     * No Olm session could be established with the device.
+     */
+    MEGOLM_KEY_WITHHELD_NO_OLM = "MEGOLM_KEY_WITHHELD_NO_OLM",
 
     /** Message was encrypted with a Megolm session which has been shared with us, but in a later ratchet state. */
     OLM_UNKNOWN_MESSAGE_INDEX = "OLM_UNKNOWN_MESSAGE_INDEX",

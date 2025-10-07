@@ -405,7 +405,7 @@ describe("MatrixEvent", () => {
             expect(encryptedEvent.isDecryptionFailure()).toBeTruthy();
             expect(encryptedEvent.decryptionFailureReason).toEqual(DecryptionFailureCode.UNKNOWN_ERROR);
             expect(encryptedEvent.decryptionFailureReason).not.toBe(
-                DecryptionFailureCode.MEGOLM_KEY_WITHHELD_FOR_UNVERIFIED_DEVICE,
+                DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNVERIFIED,
             );
             expect(encryptedEvent.getContent()).toEqual({
                 msgtype: "m.bad.encrypted",
@@ -431,7 +431,7 @@ describe("MatrixEvent", () => {
                 DecryptionFailureCode.MEGOLM_UNKNOWN_INBOUND_SESSION_ID,
             );
             expect(encryptedEvent.decryptionFailureReason).not.toBe(
-                DecryptionFailureCode.MEGOLM_KEY_WITHHELD_FOR_UNVERIFIED_DEVICE,
+                DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNVERIFIED,
             );
             expect(encryptedEvent.getContent()).toEqual({
                 msgtype: "m.bad.encrypted",
@@ -446,7 +446,7 @@ describe("MatrixEvent", () => {
                     .fn()
                     .mockRejectedValue(
                         new DecryptionError(
-                            DecryptionFailureCode.MEGOLM_KEY_WITHHELD_FOR_UNVERIFIED_DEVICE,
+                            DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNVERIFIED,
                             "The sender has disabled encrypting to unverified devices.",
                         ),
                     ),
@@ -456,9 +456,7 @@ describe("MatrixEvent", () => {
             expect(encryptedEvent.isEncrypted()).toBeTruthy();
             expect(encryptedEvent.isBeingDecrypted()).toBeFalsy();
             expect(encryptedEvent.isDecryptionFailure()).toBeTruthy();
-            expect(encryptedEvent.decryptionFailureReason).toBe(
-                DecryptionFailureCode.MEGOLM_KEY_WITHHELD_FOR_UNVERIFIED_DEVICE,
-            );
+            expect(encryptedEvent.decryptionFailureReason).toBe(DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNVERIFIED);
             expect(encryptedEvent.getContent()).toEqual({
                 msgtype: "m.bad.encrypted",
                 body: "** Unable to decrypt: DecryptionError: The sender has disabled encrypting to unverified devices. **",

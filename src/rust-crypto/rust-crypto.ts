@@ -2192,7 +2192,10 @@ class EventDecryptor {
         serverBackupInfo: KeyBackupInfo | null | undefined,
     ): never {
         const content = event.getWireContent();
-        const errorDetails = { sender_key: content.sender_key, session_id: content.session_id };
+        const errorDetails = {
+            sender_key: content.sender_key,
+            session_id: content.session_id,
+        };
 
         // If the error looks like it might be recoverable from backup, queue up a request to try that.
         if (
@@ -2238,13 +2241,37 @@ class EventDecryptor {
 
         // If we got a withheld code, expose that.
         if (err.maybe_withheld) {
-            // Unfortunately the Rust SDK API doesn't let us distinguish between different withheld cases, other than
-            // by string-matching.
-            const failureCode =
-                err.maybe_withheld === "The sender has disabled encrypting to unverified devices."
-                    ? DecryptionFailureCode.MEGOLM_KEY_WITHHELD_FOR_UNVERIFIED_DEVICE
-                    : DecryptionFailureCode.MEGOLM_KEY_WITHHELD;
-            throw new DecryptionError(failureCode, err.maybe_withheld, errorDetails);
+            /**
+             * Lookup table for withheld code to {@link DecryptionFailureCode}.
+             */
+            const withheldCodeTable: Record<string, { failureCode: DecryptionFailureCode; description: string }> = {
+                "m.blacklisted": {
+                    failureCode: DecryptionFailureCode.MEGOLM_KEY_WITHHELD_BLACKLISTED,
+                    description: "The sender has blocked you.",
+                },
+                "m.unverified": {
+                    failureCode: DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNVERIFIED,
+                    description: "The sender has disabled encrypting to unverified devices.",
+                },
+                "m.unauthorised": {
+                    failureCode: DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNAUTHORISED,
+                    description: "The user/device is not allowed to have the key.",
+                },
+                "m.unavailable": {
+                    failureCode: DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNAVAILABLE,
+                    description: "The requested key was not available on the sender's device.",
+                },
+                "m.no_olm": {
+                    failureCode: DecryptionFailureCode.MEGOLM_KEY_WITHHELD_NO_OLM,
+                    description: "An olm session could not be established.",
+                },
+            };
+
+            throw new DecryptionError(
+                withheldCodeTable[err.maybe_withheld]?.failureCode ?? DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNKNOWN,
+                withheldCodeTable[err.maybe_withheld]?.description ?? "An unknown or custom error occured.",
+                { withheld_code: err.maybe_withheld, ...errorDetails },
+            );
         }
 
         switch (err.code) {

@@ -1321,11 +1321,21 @@ describe("crypto", () => {
 
     describe("m.room_key.withheld handling", () => {
         describe.each([
-            ["m.blacklisted", "The sender has blocked you.", DecryptionFailureCode.MEGOLM_KEY_WITHHELD],
+            ["m.blacklisted", "The sender has blocked you.", DecryptionFailureCode.MEGOLM_KEY_WITHHELD_BLACKLISTED],
             [
                 "m.unverified",
                 "The sender has disabled encrypting to unverified devices.",
-                DecryptionFailureCode.MEGOLM_KEY_WITHHELD_FOR_UNVERIFIED_DEVICE,
+                DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNVERIFIED,
+            ],
+            [
+                "m.unauthorised",
+                "The user/device is not allowed to have the key.",
+                DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNAUTHORISED,
+            ],
+            [
+                "m.unavailable",
+                "The requested key was not available on the sender's device.",
+                DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNAVAILABLE,
             ],
         ])(
             "Decryption fails with withheld error if a withheld notice with code '%s' is received",
@@ -1335,7 +1345,7 @@ describe("crypto", () => {
                     await startClientAndAwaitFirstSync();
 
                     // A promise which resolves, with the MatrixEvent which wraps the event, once the decryption fails.
-                    let awaitDecryption = emitPromise(aliceClient, MatrixEventEvent.Decrypted);
+                    let awaitDecryption: Promise<MatrixEvent> = emitPromise(aliceClient, MatrixEventEvent.Decrypted);
 
                     // Send Alice an encrypted room event which looks like it was encrypted with a megolm session
                     async function sendEncryptedEvent() {
@@ -1393,10 +1403,16 @@ describe("crypto", () => {
 
                     expect(ev.decryptionFailureReason).toEqual(expectedErrorCode);
 
-                    // `decryptionFailureReason` should be `MEGOLM_KEY_WITHHELD_FOR_UNVERIFIED_DEVICE` for `m.unverified`
-                    expect(
-                        ev.decryptionFailureReason === DecryptionFailureCode.MEGOLM_KEY_WITHHELD_FOR_UNVERIFIED_DEVICE,
-                    ).toEqual(withheldCode === "m.unverified");
+                    const withheldCodeToFailureReason: Record<string, DecryptionFailureCode> = {
+                        "m.unverified": DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNVERIFIED,
+                        "m.blacklisted": DecryptionFailureCode.MEGOLM_KEY_WITHHELD_BLACKLISTED,
+                        "m.unauthorised": DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNAUTHORISED,
+                        "m.unavailable": DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNAVAILABLE,
+                        "m.no_olm": DecryptionFailureCode.MEGOLM_KEY_WITHHELD_NO_OLM,
+                        "m.unknown": DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNKNOWN,
+                    };
+
+                    expect(ev.decryptionFailureReason).toBe(withheldCodeToFailureReason[withheldCode]);
                 });
             },
         );
