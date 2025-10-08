@@ -1408,8 +1408,6 @@ describe("crypto", () => {
                         "m.blacklisted": DecryptionFailureCode.MEGOLM_KEY_WITHHELD_BLACKLISTED,
                         "m.unauthorised": DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNAUTHORISED,
                         "m.unavailable": DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNAVAILABLE,
-                        "m.no_olm": DecryptionFailureCode.MEGOLM_KEY_WITHHELD_NO_OLM,
-                        "m.unknown": DecryptionFailureCode.MEGOLM_KEY_WITHHELD_UNKNOWN,
                     };
 
                     expect(ev.decryptionFailureReason).toBe(withheldCodeToFailureReason[withheldCode]);
